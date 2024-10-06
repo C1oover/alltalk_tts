@@ -15,9 +15,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - dockerfile: "Dockerfile"
-            platforms: "linux/amd64"
-            tag_name: "cpu"
           - dockerfile: "nvidia.Dockerfile"
             platforms: "linux/amd64"
             tag_name: "cuda"
