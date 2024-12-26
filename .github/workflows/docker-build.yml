@@ -52,7 +52,17 @@ jobs:
             - fastapi
             - uvicorn
           EOF
-          ls -la docker/conda/build/
+
+      - name: Build DeepSpeed wheel
+        run: |
+          mkdir -p docker/deepspeed/build
+          git clone https://github.com/microsoft/DeepSpeed.git
+          cd DeepSpeed
+          pip install build
+          python -m build --wheel
+          mv dist/*.whl ../docker/deepspeed/build/
+          cd ..
+          rm -rf DeepSpeed
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
