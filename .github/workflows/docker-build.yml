@@ -33,6 +33,15 @@ jobs:
         with:
           buildkitd-flags: --debug
 
+      # Add step to prepare conda environment file
+      - name: Prepare conda environment
+        run: |
+          mkdir -p docker/conda/build
+          chmod +x docker/conda/build-conda-env.sh
+          ./docker/conda/build-conda-env.sh \
+            --cuda-version ${{ env.CUDA_VERSION }} \
+            --python-version ${{ env.PYTHON_VERSION }}
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -53,13 +62,6 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha,format=long
 
-      # Modify permissions for build scripts
-      - name: Set execute permissions
-        run: |
-          chmod +x docker/conda/build-conda-env.sh
-          chmod +x docker/deepspeed/build-deepspeed.sh
-          chmod +x docker-build.sh
-
       # Build and push using Docker BuildX
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -77,7 +79,3 @@ jobs:
             ALLTALK_DIR=/opt/alltalk
             CUDA_VERSION=${{ env.CUDA_VERSION }}
             PYTHON_VERSION=${{ env.PYTHON_VERSION }}
-          # Add these options to handle the conda environment issue
-          build-contexts: |
-            conda-env=docker/conda
-            deepspeed=docker/deepspeed

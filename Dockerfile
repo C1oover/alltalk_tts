@@ -35,7 +35,7 @@ WORKDIR ${ALLTALK_DIR}
 ##############################################################################
 # Create conda environment
 ##############################################################################
-COPY docker/conda/environment-${CUDA_VERSION}-py${PYTHON_VERSION}.yml environment.yml
+COPY docker/conda/build/environment-${CUDA_VERSION}-py${PYTHON_VERSION}.yml environment.yml
 RUN conda env create -f environment.yml && \
     conda clean -a -y
 
@@ -58,11 +58,12 @@ RUN pip install --no-cache-dir -r system/requirements/requirements_standalone.tx
 ##############################################################################
 # Install DeepSpeed
 ##############################################################################
+RUN mkdir -p /tmp/deepspeed
 COPY docker/deepspeed/build/*.whl /tmp/deepspeed/
 RUN DEEPSPEED_WHEEL=$(realpath /tmp/deepspeed/*.whl) && \
     CFLAGS="-I$CONDA_PREFIX/include/" LDFLAGS="-L$CONDA_PREFIX/lib/" \
     pip install --no-cache-dir ${DEEPSPEED_WHEEL} && \
-    rm ${DEEPSPEED_WHEEL} && \
+    rm -rf /tmp/deepspeed && \
     conda clean --all --force-pkgs-dirs -y && \
     pip cache purge
 
