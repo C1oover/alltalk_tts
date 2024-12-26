@@ -10,9 +10,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  CUDA_VERSION: "12.1.1"
-  PYTHON_VERSION: "3.10"
-  TTS_MODEL: "xtts"
 
 jobs:
   build:
@@ -20,62 +17,73 @@ jobs:
     permissions:
       contents: read
       packages: write
-      
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Create environment yml
+        run: |
+          mkdir -p docker/conda
+          cat > docker/conda/environment-12.1.1-py3.10.yml << 'EOF'
+          name: alltalk
+          channels:
+            - conda-forge
+            - nvidia
+            - pytorch
+          dependencies:
+            - python=3.10
+            - pip
+            - pytorch
+            - pytorch-cuda=12.1
+            - torchaudio
+            - numpy
+            - numba
+            - scipy
+            - scikit-learn
+            - imageio
+            - pandas
+            - librosa
+            - ffmpeg
+            - tensorflow
+            - flask
+            - gradio
+            - fastapi
+            - uvicorn
+          EOF
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          buildkitd-flags: --debug
 
-      # Add step to prepare conda environment file
-      - name: Prepare conda environment
-        run: |
-          mkdir -p docker/conda/build
-          chmod +x docker/conda/build-conda-env.sh
-          ./docker/conda/build-conda-env.sh \
-            --cuda-version ${{ env.CUDA_VERSION }} \
-            --python-version ${{ env.PYTHON_VERSION }}
-
-      - name: Log in to GitHub Container Registry
+      - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract Docker metadata
+      - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'alltalkbeta') }}
             type=ref,event=branch
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=sha,format=long
+            type=sha
 
-      # Build and push using Docker BuildX
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            TTS_MODEL=${{ env.TTS_MODEL }}
-            ALLTALK_DIR=/opt/alltalk
-            CUDA_VERSION=${{ env.CUDA_VERSION }}
-            PYTHON_VERSION=${{ env.PYTHON_VERSION }}
