@@ -22,10 +22,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create environment yml
+      - name: Create conda build directory and environment file
         run: |
-          mkdir -p docker/conda
-          cat > docker/conda/environment-12.1.1-py3.10.yml << 'EOF'
+          mkdir -p docker/conda/build
+          cat > docker/conda/build/environment-12.1.1-py3.10.yml << 'EOF'
           name: alltalk
           channels:
             - conda-forge
@@ -37,6 +37,7 @@ jobs:
             - pytorch
             - pytorch-cuda=12.1
             - torchaudio
+            - cudatoolkit=12.1
             - numpy
             - numba
             - scipy
@@ -51,21 +52,19 @@ jobs:
             - fastapi
             - uvicorn
           EOF
+          ls -la docker/conda/build/
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
+      - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to the Container registry
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
+      - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -84,6 +83,8 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            CUDA_VERSION=12.1.1
+            PYTHON_VERSION=3.10
