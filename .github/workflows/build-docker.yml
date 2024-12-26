@@ -1,14 +1,8 @@
 name: Build and Push Docker Image
 
-on:
+on:  # Add a colon after "on" keyword
   push:
     branches: [ alltalkbeta ]  # Change to your desired branch(es)
-
-name: Build and Push Docker Image
-
-on:
-  push:
-    branches: [ alltalkbeta ]
 
 jobs:
   build-and-push:
