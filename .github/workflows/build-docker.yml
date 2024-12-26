@@ -1,8 +1,8 @@
 name: Build and Push Docker Image
 
-on:  # Add a colon after "on" keyword
+on:
   push:
-    branches: [ alltalkbeta ]  # Change to your desired branch(es)
+    branches: [ alltalkbeta ]
 
 jobs:
   build-and-push:
@@ -14,16 +14,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+      - name: Build DeepSpeed wheels (optional)
+        run: ./docker/deepspeed/build-deepspeed.sh --python-version 3.10 # Or your version
 
       - name: Build and push the image
         run: |
           ./docker-build.sh --tag ${{ github.sha }}
           docker login ghcr.io -u ${{ github.repository_owner }} -p ${{ secrets.GITHUB_TOKEN }}
-          docker push ghcr.io/${{ github.repository_owner }}/${{ github.repository_name }}:latest # github.repository_name is lowercase
-          docker push ghcr.io/${{ github.repository_owner }}/${{ github.repository_name }}:${{ github.sha }}
-
+          docker build -t ghcr.io/${{ github.repository_owner }}/${{ github.repository_name }}:${{ github.sha }} . # Build the image
+          docker push ghcr.io/${{ github.repository_owner }}/${{ github.repository_name }}:${{ github.sha }} # Push the image (optional)
 
       - name: Clean up Docker cache
         uses: actions/cache@v3
