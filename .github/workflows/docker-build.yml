@@ -28,16 +28,16 @@ jobs:
           cat > docker/conda/build/environment-12.1.1-py3.10.yml << 'EOF'
           name: alltalk
           channels:
-            - conda-forge
-            - nvidia
             - pytorch
+            - nvidia
+            - conda-forge
+            - defaults
           dependencies:
             - python=3.10
             - pip
             - pytorch
             - pytorch-cuda=12.1
             - torchaudio
-            - cudatoolkit=12.1
             - numpy
             - numba
             - scipy
