@@ -25,30 +25,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup build cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            docker/conda/build
-            docker/deepspeed/build
-          key: ${{ runner.os }}-build-${{ hashFiles('**/requirements*.txt', 'docker/conda/*.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-build-
-
-      - name: Create ci-build.sh
-        run: |
-          cp .github/ci-build.sh ./ci-build.sh
-          chmod +x ./ci-build.sh
-          chmod +x ./docker/conda/build-conda-env.sh
-          chmod +x ./docker/deepspeed/build-deepspeed.sh
-
-      - name: Prepare build environment
-        run: |
-          ./ci-build.sh \
-            --cuda-version ${{ env.CUDA_VERSION }} \
-            --python-version ${{ env.PYTHON_VERSION }} \
-            --tts_model ${{ env.TTS_MODEL }}
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -77,10 +53,19 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha,format=long
 
+      # Modify permissions for build scripts
+      - name: Set execute permissions
+        run: |
+          chmod +x docker/conda/build-conda-env.sh
+          chmod +x docker/deepspeed/build-deepspeed.sh
+          chmod +x docker-build.sh
+
+      # Build and push using Docker BuildX
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: ./Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -90,10 +75,9 @@ jobs:
           build-args: |
             TTS_MODEL=${{ env.TTS_MODEL }}
             ALLTALK_DIR=/opt/alltalk
-          outputs: type=docker,dest=/tmp/image.tar
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: docker-image
-          path: /tmp/image.tar
+            CUDA_VERSION=${{ env.CUDA_VERSION }}
+            PYTHON_VERSION=${{ env.PYTHON_VERSION }}
+          # Add these options to handle the conda environment issue
+          build-contexts: |
+            conda-env=docker/conda
+            deepspeed=docker/deepspeed
