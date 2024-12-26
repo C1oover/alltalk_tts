@@ -21,8 +21,9 @@ jobs:
         run: |
           ./docker-build.sh --tag ${{ github.sha }}
           docker login ghcr.io -u ${{ github.repository_owner }} -p ${{ secrets.GITHUB_TOKEN }}
-          docker push ghcr.io/${{ github.repository }}:latest
-          docker push ghcr.io/${{ github.repository }}:${{ github.sha }}
+          docker push ghcr.io/${{ github.repository_owner }}/${{ github.repository_name }}:latest # github.repository_name is lowercase
+          docker push ghcr.io/${{ github.repository_owner }}/${{ github.repository_name }}:${{ github.sha }}
+
 
       - name: Clean up Docker cache
         uses: actions/cache@v3
