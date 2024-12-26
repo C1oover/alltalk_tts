@@ -51,6 +51,19 @@ jobs:
             - gradio
             - fastapi
             - uvicorn
+            - pip:
+              - inputimeout
+              - tqdm
+              - deepspeed
+              - argparse
+              - psutil
+              - pyaudio
+              - soundfile
+              - unidecode
+              - nvidia-ml-py
+              - av
+              - pygame
+              - python-dotenv
           EOF
 
       - name: Build DeepSpeed wheel
